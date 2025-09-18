@@ -1,0 +1,42 @@
+services:
+  minio:
+    image: minio/minio:RELEASE.2024-09-22T00-33-43Z
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mysql:
+    image: mysql:8.4
+    container_name: mysql
+    environment:
+      MYSQL_DATABASE: photodb
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app123
+    # Изменяем проброс порта, чтобы избежать конфликта с уже занятым 3306 на хосте.
+    ports:
+      - "3307:3306"
+    command: ["--lower_case_table_names=1"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  minio_data:
+  mysql_data:
